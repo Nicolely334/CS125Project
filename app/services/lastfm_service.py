@@ -31,7 +31,7 @@ def _call_lastfm(method: str, params: Dict[str, Any]) -> Dict[str, Any]:
 
 def track_search(track: str, artist: Optional[str] = None, limit: int = 10, page: int = 1) -> Dict[str, Any]:
     """
-    Uses track.search (no auth required). :contentReference[oaicite:4]{index=4}
+    Uses track.search (no auth required).
     """
     params: Dict[str, Any] = {"track": track, "limit": limit, "page": page}
     if artist:
@@ -41,7 +41,7 @@ def track_search(track: str, artist: Optional[str] = None, limit: int = 10, page
 
 def track_get_info(track: str, artist: str) -> Dict[str, Any]:
     """
-    Uses track.getInfo to fetch metadata by artist+track. :contentReference[oaicite:5]{index=5}
+    Uses track.getInfo to fetch metadata by artist+track.
     """
     return _call_lastfm("track.getInfo", {"track": track, "artist": artist})
 
