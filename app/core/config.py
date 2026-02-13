@@ -25,12 +25,14 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Validate required fields after init
-        if not self.LASTFM_API_KEY:
-            raise ValueError(
-                "LASTFM_API_KEY is required. Please set it in your .env file.\n"
-                "Example: LASTFM_API_KEY=your_api_key_here\n"
-                "Note: Check your .env file for syntax errors (line 8 has a parsing issue)."
+        # Warn if API key is missing, but don't block startup
+        if not self.LASTFM_API_KEY or self.LASTFM_API_KEY == "your_api_key_here":
+            import warnings
+            warnings.warn(
+                "LASTFM_API_KEY is not set. Recommendation endpoints will not work.\n"
+                "Please set it in your .env file: LASTFM_API_KEY=your_api_key_here\n"
+                "Get your API key from: https://www.last.fm/api/account/create",
+                UserWarning
             )
 
     class Config:
