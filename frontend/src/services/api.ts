@@ -8,6 +8,20 @@ export interface Track {
   reason?: string;
 }
 
+export interface ListeningLog {
+  id: number;
+  user_id: string;
+  track_id: string;
+  track?: string;
+  artist?: string;
+  genre?: string;
+  rating?: number;
+  liked: boolean;
+  favorite?: boolean;
+  notes?: string;
+  logged_at: string;
+}
+
 export async function searchTracks(
   query: string,
   options?: { artist?: string; limit?: number; page?: number }
@@ -27,8 +41,3 @@ export async function searchTracks(
   return res.json();
 }
 
-export async function checkHealth(): Promise<{ status: string }> {
-  const res = await fetch(`${API_BASE}/health`);
-  if (!res.ok) throw new Error('Backend unreachable');
-  return res.json();
-}

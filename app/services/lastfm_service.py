@@ -39,13 +39,6 @@ def track_search(track: str, artist: Optional[str] = None, limit: int = 10, page
     return _call_lastfm("track.search", params)
 
 
-def track_get_info(track: str, artist: str) -> Dict[str, Any]:
-    """
-    Uses track.getInfo to fetch metadata by artist+track.
-    """
-    return _call_lastfm("track.getInfo", {"track": track, "artist": artist})
-
-
 def track_get_similar(track: str, artist: str, limit: int = 10) -> Dict[str, Any]:
     """
     Uses track.getSimilar to get similar tracks.
@@ -60,8 +53,3 @@ def artist_get_similar(artist: str, limit: int = 10) -> Dict[str, Any]:
     return _call_lastfm("artist.getSimilar", {"artist": artist, "limit": limit})
 
 
-def artist_get_top_tracks(artist: str, limit: int = 10) -> Dict[str, Any]:
-    """
-    Uses artist.getTopTracks to get top tracks for an artist.
-    """
-    return _call_lastfm("artist.getTopTracks", {"artist": artist, "limit": limit})

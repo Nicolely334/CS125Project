@@ -1,4 +1,3 @@
-# app/core/config.py
 from pydantic_settings import BaseSettings
 from pydantic import Field, field_validator
 from typing import Union
@@ -7,11 +6,6 @@ import os
 class Settings(BaseSettings):
     PORT: int = Field(default=8000)
     CORS_ORIGINS: Union[str, list[str]] = Field(default="http://localhost:3000")
-
-    SUPABASE_URL: str | None = None
-    SUPABASE_SERVICE_ROLE_KEY: str | None = None
-
-    # Last.fm - try to get from env directly if .env parsing fails
     LASTFM_API_KEY: str = Field(default_factory=lambda: os.getenv("LASTFM_API_KEY", ""))
     LASTFM_BASE_URL: str = "https://ws.audioscrobbler.com/2.0/"
 

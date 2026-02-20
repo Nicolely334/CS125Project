@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { AuthModal } from './AuthModal';
 
 export function Layout() {
   const location = useLocation();
+  const { user, signOut } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const navItems = [
     { path: '/', label: 'Search', icon: '🔍' },
@@ -28,10 +33,27 @@ export function Layout() {
             </Link>
           ))}
         </nav>
+        <div>
+          {user ? (
+            <div className="user-info">
+              <span className="user-email">{user.email}</span>
+                <button onClick={signOut} className="auth-button">
+                  Sign Out
+                </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowAuthModal(true)} className="auth-button">
+              Sign In
+            </button>
+          )}
+        </div>
       </header>
       <main className="main">
         <Outlet />
       </main>
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} initialMode="signin" />
+      )}
     </div>
   );
 }

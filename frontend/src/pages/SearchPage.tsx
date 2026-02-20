@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { searchTracks, type Track } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { LogSongModal } from '../components/LogSongModal';
 
 export function SearchPage() {
   const [query, setQuery] = useState('');
@@ -7,6 +9,8 @@ export function SearchPage() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const { user } = useAuth();
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -25,6 +29,14 @@ export function SearchPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleLogClick(track: Track) {
+    if (!user) {
+      setError('Please sign in to log songs');
+      return;
+    }
+    setSelectedTrack(track);
   }
 
   return (
@@ -57,11 +69,7 @@ export function SearchPage() {
         </button>
       </form>
 
-      {error && (
-        <div className="alert alert-error">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-error">{error}</div>}
 
       {tracks.length > 0 && (
         <div className="track-list">
@@ -74,10 +82,12 @@ export function SearchPage() {
                   <span className="track-artist">{t.artist}</span>
                 </div>
                 <div className="track-actions">
-                  <button className="btn btn-sm" title="Rate">
-                    ⭐
-                  </button>
-                  <button className="btn btn-sm" title="Add to log">
+                  <button
+                    className="btn btn-sm"
+                    title="Add to log"
+                    onClick={() => handleLogClick(t)}
+                    disabled={!user}
+                  >
                     ➕
                   </button>
                 </div>
@@ -89,6 +99,14 @@ export function SearchPage() {
 
       {!loading && query && tracks.length === 0 && !error && (
         <p className="empty-state">No tracks found. Try a different search.</p>
+      )}
+
+      {selectedTrack && (
+        <LogSongModal
+          track={selectedTrack}
+          onClose={() => setSelectedTrack(null)}
+          onSuccess={() => setSelectedTrack(null)}
+        />
       )}
     </section>
   );
