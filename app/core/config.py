@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     LASTFM_API_KEY: str = Field(default_factory=lambda: os.getenv("LASTFM_API_KEY", ""))
     LASTFM_BASE_URL: str = "https://ws.audioscrobbler.com/2.0/"
 
+    # Supabase (optional – for personal recommendations from listening_logs)
+    SUPABASE_URL: str | None = Field(default=None)
+    SUPABASE_SERVICE_ROLE_KEY: str | None = Field(default=None)
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):

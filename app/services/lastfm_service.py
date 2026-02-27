@@ -39,6 +39,13 @@ def track_search(track: str, artist: Optional[str] = None, limit: int = 10, page
     return _call_lastfm("track.search", params)
 
 
+def artist_search(artist: str, limit: int = 10, page: int = 1) -> Dict[str, Any]:
+    """
+    Uses artist.search (no auth required).
+    """
+    return _call_lastfm("artist.search", {"artist": artist, "limit": limit, "page": page})
+
+
 def track_get_similar(track: str, artist: str, limit: int = 10) -> Dict[str, Any]:
     """
     Uses track.getSimilar to get similar tracks.
@@ -51,5 +58,35 @@ def artist_get_similar(artist: str, limit: int = 10) -> Dict[str, Any]:
     Uses artist.getSimilar to get similar artists.
     """
     return _call_lastfm("artist.getSimilar", {"artist": artist, "limit": limit})
+
+
+def tag_get_similar(tag: str, limit: int = 10) -> Dict[str, Any]:
+    """Uses tag.getSimilar to get similar tags."""
+    return _call_lastfm("tag.getSimilar", {"tag": tag, "limit": limit})
+
+
+def tag_get_top_artists(tag: str, limit: int = 10, page: int = 1) -> Dict[str, Any]:
+    """Uses tag.getTopArtists for top artists by tag."""
+    return _call_lastfm("tag.getTopArtists", {"tag": tag, "limit": limit, "page": page})
+
+
+def tag_get_top_tracks(tag: str, limit: int = 10, page: int = 1) -> Dict[str, Any]:
+    """Uses tag.getTopTracks for top tracks by tag."""
+    return _call_lastfm("tag.getTopTracks", {"tag": tag, "limit": limit, "page": page})
+
+
+def tag_get_top_albums(tag: str, limit: int = 10, page: int = 1) -> Dict[str, Any]:
+    """Uses tag.getTopAlbums for top albums by tag."""
+    return _call_lastfm("tag.getTopAlbums", {"tag": tag, "limit": limit, "page": page})
+
+
+def chart_get_top_artists(limit: int = 10, page: int = 1) -> Dict[str, Any]:
+    """Uses chart.getTopArtists for global top artists chart."""
+    return _call_lastfm("chart.getTopArtists", {"limit": limit, "page": page})
+
+
+def chart_get_top_tracks(limit: int = 10, page: int = 1) -> Dict[str, Any]:
+    """Uses chart.getTopTracks for global top tracks chart."""
+    return _call_lastfm("chart.getTopTracks", {"limit": limit, "page": page})
 
 

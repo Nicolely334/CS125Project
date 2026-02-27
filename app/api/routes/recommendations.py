@@ -3,6 +3,8 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 from app.services.lastfm_service import track_get_similar, artist_get_similar
+from app.services.personal_recommendations import get_personal_recommendations
+from app.services.discover_recommendations import get_discover_recommendations
 
 
 router = APIRouter()
@@ -15,6 +17,25 @@ class RecommendationResponse(BaseModel):
     source: str = "lastfm"
     reason: Optional[str] = None
     match_score: Optional[float] = None
+
+
+def _normalize_text_key(text: str) -> str:
+    return " ".join((text or "").strip().lower().split())
+
+
+def _dedupe_recommendations(items: List[RecommendationResponse], limit: Optional[int] = None) -> List[RecommendationResponse]:
+    seen: set[str] = set()
+    out: List[RecommendationResponse] = []
+    for item in items:
+        # Prefer stable IDs, fallback to normalized artist+track text.
+        key = item.id or f"{_normalize_text_key(item.artist)}::{_normalize_text_key(item.track)}"
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(item)
+        if limit is not None and len(out) >= limit:
+            break
+    return out
 
 
 def _extract_string_value(field_value: Any) -> str:
@@ -92,7 +113,7 @@ def get_track_recommendations(
             if normalized:
                 recommendations.append(normalized)
         
-        return recommendations
+        return _dedupe_recommendations(recommendations, limit=limit)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
@@ -116,11 +137,48 @@ def get_artist_recommendations(
         for artist_data in artists_data:
             recommendations.extend(_normalize_artist_tracks(artist_data, reason=f"Similar to {artist}"))
         
-        return recommendations
+        return _dedupe_recommendations(recommendations, limit=limit)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get artist recommendations: {str(e)}")
+
+
+@router.get("/personal", response_model=List[RecommendationResponse])
+def get_personal_recommendations_endpoint(
+    user_id: str = Query(..., description="Authenticated user ID (e.g. Supabase auth user id)"),
+    limit: int = Query(20, ge=1, le=50, description="Number of recommendations to return"),
+):
+    """
+    Personalized recommendations based on the user's listening log: seeds from their
+    top tracks and artists, candidates from Last.fm, reranked by a personal model
+    (artist affinity, liked artists, already-logged penalty, Last.fm score).
+    Requires Supabase configured and listening_logs data for the user.
+    """
+    try:
+        recs = get_personal_recommendations(user_id=user_id, limit=limit)
+        out = [RecommendationResponse(**r) for r in recs]
+        return _dedupe_recommendations(out, limit=limit)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Personal recommendations failed: {str(e)}")
+
+
+@router.get("/discover", response_model=List[RecommendationResponse])
+def get_discover_recommendations_endpoint(
+    user_id: Optional[str] = Query(None, description="Optional user ID for personalized discover (from your logged artists, tags, etc.)"),
+    limit: int = Query(30, ge=1, le=50, description="Number of recommendations to return"),
+):
+    """
+    Discover: recommendations from your logged artists (artist.getSimilar), tags (tag.getTopArtists,
+    tag.getTopTracks, tag.getTopAlbums) and global charts (chart.getTopArtists, chart.getTopTracks).
+    If user_id is omitted, returns chart-based recommendations only.
+    """
+    try:
+        recs = get_discover_recommendations(user_id=user_id, limit=limit)
+        out = [RecommendationResponse(**r) for r in recs]
+        return _dedupe_recommendations(out, limit=limit)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Discover recommendations failed: {str(e)}")
 
 
 @router.get("/combined", response_model=List[RecommendationResponse])
@@ -165,7 +223,7 @@ def get_combined_recommendations(
                     all_recommendations.append(normalized)
         
         all_recommendations.sort(key=lambda x: x.match_score if x.match_score is not None else 0.0, reverse=True)
-        return all_recommendations[:limit]
+        return _dedupe_recommendations(all_recommendations, limit=limit)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:

@@ -69,6 +69,77 @@ export async function logSong(params: LogSongParams): Promise<ListeningLog> {
   return logData;
 }
 
+export interface ArtistLog {
+  id: number;
+  user_id: string;
+  artist_id: string;
+  artist_name: string;
+  genre?: string | null;
+  genres?: string[] | null;
+  liked: boolean;
+  favorite: boolean;
+  notes?: string | null;
+  source: string;
+  logged_at: string;
+}
+
+export interface LogArtistParams {
+  artist_id: string;
+  artist_name: string;
+  genre?: string;
+  genres?: string[];
+  liked?: boolean;
+  favorite?: boolean;
+  notes?: string;
+  tagIds?: number[];
+  customTagIds?: number[];
+}
+
+export async function logArtist(params: LogArtistParams): Promise<ArtistLog> {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    throw new Error('You must be signed in to log artists');
+  }
+
+  const payload = {
+    user_id: user.id,
+    artist_id: params.artist_id,
+    artist_name: params.artist_name,
+    genre: params.genre ?? null,
+    genres: params.genres ?? [],
+    liked: params.liked ?? false,
+    favorite: params.favorite ?? false,
+    notes: params.notes ?? null,
+    source: 'lastfm',
+  };
+
+  const { data, error } = await supabase
+    .from('artist_logs')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'Failed to log artist');
+  }
+
+  if ((params.tagIds && params.tagIds.length > 0) || (params.customTagIds && params.customTagIds.length > 0)) {
+    const artistLogTags: any[] = [];
+    if (params.tagIds) {
+      params.tagIds.forEach(tagId => artistLogTags.push({ log_id: data.id, tag_id: tagId }));
+    }
+    if (params.customTagIds) {
+      params.customTagIds.forEach(tagId => artistLogTags.push({ log_id: data.id, user_tag_id: tagId }));
+    }
+    const { error: tagError } = await supabase.from('artist_log_tags').insert(artistLogTags);
+    if (tagError) {
+      console.warn('Failed to add artist tags:', tagError);
+    }
+  }
+
+  return data as ArtistLog;
+}
+
 export async function getUserLogsWithTags(limit: number = 50, offset: number = 0): Promise<(ListeningLog & { tags?: Tag[] })[]> {
   const { data, error } = await supabase
     .from('listening_logs')
@@ -204,6 +275,73 @@ export async function addTagsToLog(logId: number, tagIds: number[], customTagIds
   const { error } = await supabase.from('log_tags').insert(logTags);
   if (error) {
     throw new Error(error.message || 'Failed to add tags to log');
+  }
+}
+
+export interface ArtistLogWithTags extends ArtistLog {
+  tags?: Tag[];
+}
+
+export async function getUserArtistLogsWithTags(limit: number = 50, offset: number = 0): Promise<ArtistLogWithTags[]> {
+  const { data, error } = await supabase
+    .from('artist_logs')
+    .select(`
+      *,
+      artist_log_tags(
+        tag_id,
+        user_tag_id,
+        preset_tags(id, name)
+      )
+    `)
+    .order('logged_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(error.message || 'Failed to fetch artist logs');
+  }
+
+  const userTagIds = new Set<number>();
+  (data || []).forEach((log: any) => {
+    (log.artist_log_tags || []).forEach((lt: any) => {
+      if (lt.user_tag_id) {
+        userTagIds.add(lt.user_tag_id);
+      }
+    });
+  });
+
+  const customTagsMap: Record<number, Tag> = {};
+  if (userTagIds.size > 0) {
+    const { data: customTags } = await supabase
+      .from('tags')
+      .select('id, name')
+      .in('id', Array.from(userTagIds));
+
+    (customTags || []).forEach((tag: any) => {
+      customTagsMap[tag.id] = { id: tag.id, name: tag.name };
+    });
+  }
+
+  return (data || []).map((log: any) => {
+    const tags: Tag[] = [];
+    (log.artist_log_tags || []).forEach((lt: any) => {
+      if (lt.preset_tags) {
+        tags.push({ id: lt.preset_tags.id, name: lt.preset_tags.name });
+      } else if (lt.user_tag_id && customTagsMap[lt.user_tag_id]) {
+        tags.push(customTagsMap[lt.user_tag_id]);
+      }
+    });
+    return { ...log, tags };
+  });
+}
+
+export async function deleteArtistLog(logId: number): Promise<void> {
+  const { error } = await supabase
+    .from('artist_logs')
+    .delete()
+    .eq('id', logId);
+
+  if (error) {
+    throw new Error(error.message || 'Failed to delete artist log');
   }
 }
 

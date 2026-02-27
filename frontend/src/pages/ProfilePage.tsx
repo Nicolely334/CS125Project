@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserLogsWithTags, deleteLog } from '../services/logs';
+import { getUserLogsWithTags, deleteLog, getUserArtistLogsWithTags, deleteArtistLog } from '../services/logs';
 import { AuthModal } from '../components/AuthModal';
-import type { Tag } from '../services/logs';
+import type { Tag, ArtistLogWithTags } from '../services/logs';
 
 interface LogWithTags {
   id: number;
@@ -22,6 +22,7 @@ interface LogWithTags {
 export function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const [logs, setLogs] = useState<LogWithTags[]>([]);
+  const [artistLogs, setArtistLogs] = useState<ArtistLogWithTags[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -38,8 +39,12 @@ export function ProfilePage() {
     setLoading(true);
     setError(null);
     try {
-      const userLogs = await getUserLogsWithTags(100);
+      const [userLogs, userArtistLogs] = await Promise.all([
+        getUserLogsWithTags(100),
+        getUserArtistLogsWithTags(100),
+      ]);
       setLogs(userLogs);
+      setArtistLogs(userArtistLogs);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load logs');
     } finally {
@@ -57,6 +62,19 @@ export function ProfilePage() {
       setLogs(logs.filter(log => log.id !== logId));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete log');
+    }
+  }
+
+  async function handleDeleteArtistLog(logId: number) {
+    if (!confirm('Are you sure you want to delete this artist log entry?')) {
+      return;
+    }
+
+    try {
+      await deleteArtistLog(logId);
+      setArtistLogs(artistLogs.filter(log => log.id !== logId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete artist log');
     }
   }
 
@@ -107,81 +125,143 @@ export function ProfilePage() {
 
       {loading ? (
         <p>Loading your logs...</p>
-      ) : logs.length === 0 ? (
+      ) : logs.length === 0 && artistLogs.length === 0 ? (
         <div className="placeholder-card">
-          <p>No songs logged yet.</p>
-          <p>Search for songs and click the ➕ button to add them to your log!</p>
+          <p>No songs or artists logged yet.</p>
+          <p>Search and click the ➕ button to add tracks or artists to your logs.</p>
         </div>
       ) : (
-        <div className="track-list">
-          <h2>Your Listening Log ({logs.length})</h2>
-          <ul>
-            {logs.map((log) => (
-              <li key={log.id} className="track-card">
-                <div className="track-info">
-                  <span className="track-name">
-                    {log.track || `Track ID: ${log.track_id}`}
-                    {log.rating !== undefined && log.rating !== null && (
-                      <span className="rating" style={{ marginLeft: '0.5rem', color: '#f5c542' }}>
-                        ⭐ {log.rating}/5
+        <>
+          {logs.length > 0 && (
+            <div className="track-list" style={{ marginBottom: '2rem' }}>
+              <h2>Your Listening Log ({logs.length})</h2>
+              <ul>
+                {logs.map((log) => (
+                  <li key={log.id} className="track-card">
+                    <div className="track-info">
+                      <span className="track-name">
+                        {log.track || `Track ID: ${log.track_id}`}
+                        {log.rating !== undefined && log.rating !== null && (
+                          <span className="rating" style={{ marginLeft: '0.5rem', color: '#f5c542' }}>
+                            ⭐ {log.rating}/5
+                          </span>
+                        )}
+                        {log.liked && (
+                          <span className="liked" style={{ marginLeft: '0.5rem' }}>❤️</span>
+                        )}
+                        {log.favorite && (
+                          <span className="favorite" style={{ marginLeft: '0.5rem', color: '#f5c542' }}>⭐</span>
+                        )}
                       </span>
-                    )}
-                    {log.liked && (
-                      <span className="liked" style={{ marginLeft: '0.5rem' }}>❤️</span>
-                    )}
-                    {log.favorite && (
-                      <span className="favorite" style={{ marginLeft: '0.5rem', color: '#f5c542' }}>⭐</span>
-                    )}
-                  </span>
-                  <span className="track-artist">
-                    {log.artist || 'Unknown Artist'}
-                    {log.genre && (
-                      <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
-                        • {log.genre}
+                      <span className="track-artist">
+                        {log.artist || 'Unknown Artist'}
+                        {log.genre && (
+                          <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                            • {log.genre}
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                  {log.tags && log.tags.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem' }}>
-                      {log.tags.map((tag) => (
-                        <span
-                          key={tag.id}
-                          style={{
-                            fontSize: '0.75rem',
-                            padding: '0.25rem 0.5rem',
-                            background: 'rgba(245, 197, 66, 0.2)',
-                            borderRadius: '4px',
-                            color: '#f5c542',
-                          }}
-                        >
-                          {tag.name}
+                      {log.tags && log.tags.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem' }}>
+                          {log.tags.map((tag) => (
+                            <span
+                              key={tag.id}
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.25rem 0.5rem',
+                                background: 'rgba(245, 197, 66, 0.2)',
+                                borderRadius: '4px',
+                                color: '#f5c542',
+                              }}
+                            >
+                              {tag.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {log.notes && (
+                        <span className="notes" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem', display: 'block' }}>
+                          Notes: {log.notes}
                         </span>
-                      ))}
+                      )}
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem', display: 'block' }}>
+                        Logged: {new Date(log.logged_at).toLocaleDateString()} at{' '}
+                        {new Date(log.logged_at).toLocaleTimeString()}
+                      </span>
                     </div>
-                  )}
-                  {log.notes && (
-                    <span className="notes" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem', display: 'block' }}>
-                      Notes: {log.notes}
-                    </span>
-                  )}
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem', display: 'block' }}>
-                    Logged: {new Date(log.logged_at).toLocaleDateString()} at{' '}
-                    {new Date(log.logged_at).toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="track-actions">
-                  <button
-                    className="btn btn-sm"
-                    title="Delete"
-                    onClick={() => handleDeleteLog(log.id)}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                    <div className="track-actions">
+                      <button
+                        className="btn btn-sm"
+                        title="Delete"
+                        onClick={() => handleDeleteLog(log.id)}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {artistLogs.length > 0 && (
+            <div className="track-list">
+              <h2>Your Artist Log ({artistLogs.length})</h2>
+              <ul>
+                {artistLogs.map((log) => (
+                  <li key={log.id} className="track-card">
+                    <div className="track-info">
+                      <span className="track-name">
+                        {log.artist_name}
+                        {log.liked && <span className="liked" style={{ marginLeft: '0.5rem' }}>❤️</span>}
+                        {log.favorite && <span className="favorite" style={{ marginLeft: '0.5rem', color: '#f5c542' }}>⭐</span>}
+                      </span>
+                      <span className="track-artist">
+                        {log.genre || (log.genres && log.genres.length > 0 ? log.genres.join(', ') : 'No genre')}
+                      </span>
+                      {log.tags && log.tags.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem' }}>
+                          {log.tags.map((tag) => (
+                            <span
+                              key={tag.id}
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.25rem 0.5rem',
+                                background: 'rgba(245, 197, 66, 0.2)',
+                                borderRadius: '4px',
+                                color: '#f5c542',
+                              }}
+                            >
+                              {tag.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {log.notes && (
+                        <span className="notes" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem', display: 'block' }}>
+                          Notes: {log.notes}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem', display: 'block' }}>
+                        Logged: {new Date(log.logged_at).toLocaleDateString()} at{' '}
+                        {new Date(log.logged_at).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <div className="track-actions">
+                      <button
+                        className="btn btn-sm"
+                        title="Delete"
+                        onClick={() => handleDeleteArtistLog(log.id)}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
