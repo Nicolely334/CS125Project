@@ -9,9 +9,10 @@ class Settings(BaseSettings):
     LASTFM_API_KEY: str = Field(default_factory=lambda: os.getenv("LASTFM_API_KEY", ""))
     LASTFM_BASE_URL: str = "https://ws.audioscrobbler.com/2.0/"
 
-    # Supabase (optional – for personal recommendations from listening_logs)
-    SUPABASE_URL: str | None = Field(default=None)
-    SUPABASE_SERVICE_ROLE_KEY: str | None = Field(default=None)
+    # Supabase (for personal recommendations from listening_logs)
+    # Try VITE_ prefixed vars first (for consistency), fallback to non-prefixed
+    SUPABASE_URL: str | None = Field(default_factory=lambda: os.getenv("VITE_SUPABASE_URL") or os.getenv("SUPABASE_URL"))
+    SUPABASE_SERVICE_ROLE_KEY: str | None = Field(default_factory=lambda: os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

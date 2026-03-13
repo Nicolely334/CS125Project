@@ -26,6 +26,7 @@ export function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tracks' | 'artists'>('tracks');
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -132,9 +133,26 @@ export function ProfilePage() {
         </div>
       ) : (
         <>
-          {logs.length > 0 && (
+          <div className="profile-tabs">
+            <button
+              type="button"
+              className={`profile-tab ${activeTab === 'tracks' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tracks')}
+            >
+              Tracks ({logs.length})
+            </button>
+            <button
+              type="button"
+              className={`profile-tab ${activeTab === 'artists' ? 'active' : ''}`}
+              onClick={() => setActiveTab('artists')}
+            >
+              Artists ({artistLogs.length})
+            </button>
+          </div>
+
+          {activeTab === 'tracks' && logs.length > 0 && (
             <div className="track-list" style={{ marginBottom: '2rem' }}>
-              <h2>Your Listening Log ({logs.length})</h2>
+              <h2>Your Listening Log</h2>
               <ul>
                 {logs.map((log) => (
                   <li key={log.id} className="track-card">
@@ -204,9 +222,9 @@ export function ProfilePage() {
             </div>
           )}
 
-          {artistLogs.length > 0 && (
+          {activeTab === 'artists' && artistLogs.length > 0 && (
             <div className="track-list">
-              <h2>Your Artist Log ({artistLogs.length})</h2>
+              <h2>Your Artist Log</h2>
               <ul>
                 {artistLogs.map((log) => (
                   <li key={log.id} className="track-card">

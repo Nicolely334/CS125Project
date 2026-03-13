@@ -59,9 +59,12 @@ PORT=8000
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 LASTFM_API_KEY=your-lastfm-key
 
-# Supabase (only need these 2 - backend reads from VITE_ vars too)
+# Supabase (frontend uses VITE_ prefixed vars)
 VITE_SUPABASE_URL=your-supabase-url
 VITE_SUPABASE_ANON_KEY=your-publishable-key
+
+# Supabase (backend needs service role key for personal recommendations)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 **Where to find these in Supabase:**
@@ -69,7 +72,12 @@ VITE_SUPABASE_ANON_KEY=your-publishable-key
 2. Settings → API → "Publishable and secret API keys" tab
 3. Copy "Project URL" → `VITE_SUPABASE_URL`
 4. Copy "Publishable key" (starts with `sb_publishable_...`) → `VITE_SUPABASE_ANON_KEY`
+5. Copy "Service role key" (starts with `sb_...` or `eyJ...`) → `SUPABASE_SERVICE_ROLE_KEY`
 
-**Note:** The publishable key is safe to expose in frontend code. RLS policies protect your data.
+**Note:** 
+- The publishable key is safe to expose in frontend code. RLS policies protect your data.
+- The service role key is SECRET - never expose it in frontend code. It's only used by the backend to read listening_logs for personal recommendations.
 
-**If you see "Legacy anon, service_role API keys" tab:** You can use the legacy "anon public" key instead - both work the same way.
+**If you see "Legacy anon, service_role API keys" tab:** 
+- Use the legacy "anon public" key for `VITE_SUPABASE_ANON_KEY`
+- Use the legacy "service_role" key for `SUPABASE_SERVICE_ROLE_KEY`

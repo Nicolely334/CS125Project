@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
 from app.core.config import settings
 from app.api.routes.health import router as health_router
 from app.api.routes.search import router as search_router
 from app.api.routes.recommendations import router as recommendations_router
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = FastAPI(title="MusicBoxd API", version="0.1.0")
 

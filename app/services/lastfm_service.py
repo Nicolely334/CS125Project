@@ -39,6 +39,17 @@ def track_search(track: str, artist: Optional[str] = None, limit: int = 10, page
     return _call_lastfm("track.search", params)
 
 
+def track_get_info(track: str, artist: str, autocorrect: int = 1) -> Dict[str, Any]:
+    """
+    Uses track.getInfo to get detailed track metadata including tags, genre, etc.
+    """
+    return _call_lastfm("track.getInfo", {
+        "track": track,
+        "artist": artist,
+        "autocorrect": autocorrect
+    })
+
+
 def artist_search(artist: str, limit: int = 10, page: int = 1) -> Dict[str, Any]:
     """
     Uses artist.search (no auth required).
@@ -88,5 +99,3 @@ def chart_get_top_artists(limit: int = 10, page: int = 1) -> Dict[str, Any]:
 def chart_get_top_tracks(limit: int = 10, page: int = 1) -> Dict[str, Any]:
     """Uses chart.getTopTracks for global top tracks chart."""
     return _call_lastfm("chart.getTopTracks", {"limit": limit, "page": page})
-
-

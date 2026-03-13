@@ -27,6 +27,7 @@ def _normalize_text_key(text: str) -> str:
 def _track_text_key(track_name: str, artist_name: str) -> str:
     return f"{_normalize_text_key(artist_name)}::{_normalize_text_key(track_name)}"
 
+
 @router.get("/search", response_model=List[TrackResponse])
 def search_tracks(
     q: str = Query(..., description="Search query (track name)"),
@@ -114,4 +115,3 @@ def search_artists(
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Artist search failed: {str(e)}")
-

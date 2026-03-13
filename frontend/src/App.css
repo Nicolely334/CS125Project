@@ -254,6 +254,37 @@
   line-height: 1.8;
 }
 
+/* Profile tabs */
+.profile-tabs {
+  display: inline-flex;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.profile-tab {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-tab.active {
+  background: rgba(245, 197, 66, 0.2);
+  color: #f5c542;
+}
+
+.profile-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;
@@ -500,4 +531,91 @@
   background: rgba(40, 167, 69, 0.2);
   border: 1px solid rgba(40, 167, 69, 0.4);
   color: #7dd87f;
+}
+
+/* Discover sections */
+.discover-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.discover-section {
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f5c542;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(245, 197, 66, 0.3);
+  letter-spacing: -0.01em;
+}
+
+/* Discover grid layout */
+.discover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.discover-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.discover-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(245, 197, 66, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.discover-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.discover-track-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.discover-artist-name {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive grid */
+@media (max-width: 768px) {
+  .discover-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .discover-card {
+    padding: 0.75rem;
+  }
+  
+  .section-header {
+    font-size: 1.2rem;
+  }
 }
